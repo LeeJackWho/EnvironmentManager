@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  environment-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      # Notion API 配置
+      - NOTION_API_KEY=${NOTION_API_KEY}
+      - NOTION_DATABASE_ID=${NOTION_DATABASE_ID}
+      - CAPTCHA_API_KEY=${CAPTCHA_API_KEY}
+      # Playwright 配置
+      - PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+      - PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+    env_file:
+      - .env.local
+    restart: unless-stopped
+    # 安全配置
+    security_opt:
+      - no-new-privileges:true
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    volumes:
+      # 持久化浏览器会话数据
+      - browser-sessions:/app/.browser-sessions
+      # 日志目录
+      - ./logs:/app/logs
+      # 配置文件（可选）
+      - ./config:/app/config:ro
+    networks:
+      - environment-manager-network
+
+volumes:
+  browser-sessions:
+    driver: local
+
+networks:
+  environment-manager-network:
+    driver: bridge

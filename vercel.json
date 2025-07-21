@@ -1,0 +1,28 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "devCommand": "npm run dev",
+  "env": {
+    "NOTION_API_KEY": "@notion_api_key",
+    "NOTION_DATABASE_ID": "@notion_database_id",
+    "CAPTCHA_API_KEY": "@captcha_api_key"
+  },
+  "build": {
+    "env": {
+      "NOTION_API_KEY": "@notion_api_key",
+      "NOTION_DATABASE_ID": "@notion_database_id",
+      "CAPTCHA_API_KEY": "@captcha_api_key"
+    }
+  },
+  "functions": {
+    "src/pages/api/**/*.js": {
+      "maxDuration": 60
+    }
+  },
+  "regions": ["hkg1", "sin1", "sfo1"],
+  "github": {
+    "autoAlias": false
+  }
+}

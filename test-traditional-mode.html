@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>传统模式测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        button:hover { background-color: #005a87; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .result.success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .result.error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .result.loading { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 传统模式测试</h1>
+        <p>测试 /api/environments/[id]/test-async 接口</p>
+    </div>
+
+    <div class="test-card">
+        <h3>📝 测试网站信息</h3>
+        <div class="form-group">
+            <label>网站ID:</label>
+            <input type="text" id="siteId" value="test-site-id" placeholder="输入网站ID">
+        </div>
+        <div class="form-group">
+            <label>测试模式:</label>
+            <select id="mode">
+                <option value="traditional">传统模式</option>
+                <option value="midscene">Midscene模式</option>
+            </select>
+        </div>
+        <button onclick="testTraditionalMode()">启动测试</button>
+        <button onclick="checkTaskStatus()">检查任务状态</button>
+        <button onclick="clearResult()">清空结果</button>
+        <div id="test-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-card">
+        <h3>🔍 API 路由测试</h3>
+        <button onclick="testApiExists()">检查API是否存在</button>
+        <button onclick="testWithRealSite()">使用真实网站测试</button>
+        <div id="api-result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        let currentTaskId = null;
+
+        function showResult(elementId, message, type = 'loading') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.textContent = message;
+        }
+
+        async function testTraditionalMode() {
+            const siteId = document.getElementById('siteId').value;
+            const mode = document.getElementById('mode').value;
+
+            if (!siteId) {
+                showResult('test-result', '请输入网站ID', 'error');
+                return;
+            }
+
+            showResult('test-result', `正在启动${mode === 'midscene' ? 'Midscene' : '传统'}模式测试...`, 'loading');
+
+            try {
+                const response = await fetch(`/api/environments/${siteId}/test-async`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ mode })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    currentTaskId = data.taskId;
+                    showResult('test-result', 
+                        `✅ 测试启动成功!\n` +
+                        `任务ID: ${data.taskId}\n` +
+                        `消息: ${data.message}\n` +
+                        `模式: ${mode}\n\n` +
+                        `点击"检查任务状态"查看进度`, 'success');
+                } else {
+                    showResult('test-result', 
+                        `❌ 测试启动失败!\n` +
+                        `状态码: ${response.status}\n` +
+                        `错误: ${data.error || '未知错误'}\n` +
+                        `详情: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult('test-result', 
+                    `❌ 网络错误!\n` +
+                    `错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkTaskStatus() {
+            if (!currentTaskId) {
+                showResult('test-result', '请先启动一个测试任务', 'error');
+                return;
+            }
+
+            showResult('test-result', '正在检查任务状态...', 'loading');
+
+            try {
+                const response = await fetch(`/api/tasks/${currentTaskId}`);
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const task = data.task;
+                    showResult('test-result', 
+                        `📊 任务状态:\n` +
+                        `ID: ${task.id}\n` +
+                        `状态: ${task.status}\n` +
+                        `进度: ${task.progress}%\n` +
+                        `消息: ${task.message}\n` +
+                        `开始时间: ${new Date(task.startTime).toLocaleString()}\n` +
+                        `${task.endTime ? `结束时间: ${new Date(task.endTime).toLocaleString()}\n` : ''}` +
+                        `${task.error ? `错误: ${task.error}\n` : ''}` +
+                        `${task.result ? `结果: ${JSON.stringify(task.result, null, 2)}` : ''}`, 
+                        task.status === 'completed' ? 'success' : 
+                        task.status === 'failed' ? 'error' : 'loading');
+                } else {
+                    showResult('test-result', 
+                        `❌ 获取任务状态失败!\n` +
+                        `错误: ${data.error || '未知错误'}`, 'error');
+                }
+            } catch (error) {
+                showResult('test-result', 
+                    `❌ 网络错误!\n` +
+                    `错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function testApiExists() {
+            showResult('api-result', '正在检查API路由...', 'loading');
+
+            try {
+                // 测试不存在的网站ID
+                const response = await fetch('/api/environments/non-existent-id/test-async', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ mode: 'traditional' })
+                });
+
+                const data = await response.json();
+
+                if (response.status === 404) {
+                    showResult('api-result', 
+                        `✅ API路由存在!\n` +
+                        `状态码: ${response.status} (预期的404)\n` +
+                        `错误: ${data.error}\n` +
+                        `这说明API路由正常工作，只是网站不存在`, 'success');
+                } else {
+                    showResult('api-result', 
+                        `⚠️ API响应异常!\n` +
+                        `状态码: ${response.status}\n` +
+                        `响应: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                if (error.message.includes('404')) {
+                    showResult('api-result', 
+                        `❌ API路由不存在!\n` +
+                        `错误: ${error.message}\n` +
+                        `请检查路由文件是否正确创建`, 'error');
+                } else {
+                    showResult('api-result', 
+                        `❌ 网络错误!\n` +
+                        `错误: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testWithRealSite() {
+            showResult('api-result', '正在获取真实网站进行测试...', 'loading');
+
+            try {
+                // 先获取网站列表
+                const sitesResponse = await fetch('/api/sites');
+                const sitesData = await sitesResponse.json();
+
+                if (sitesResponse.ok && sitesData.success && sitesData.data.length > 0) {
+                    const firstSite = sitesData.data[0];
+                    document.getElementById('siteId').value = firstSite.id;
+                    
+                    showResult('api-result', 
+                        `✅ 找到真实网站!\n` +
+                        `网站ID: ${firstSite.id}\n` +
+                        `网站名称: ${firstSite.name}\n` +
+                        `网站URL: ${firstSite.url}\n\n` +
+                        `已自动填入网站ID，点击"启动测试"开始测试`, 'success');
+                } else {
+                    showResult('api-result', 
+                        `⚠️ 没有找到网站数据!\n` +
+                        `请先在环境管理页面添加网站`, 'error');
+                }
+            } catch (error) {
+                showResult('api-result', 
+                    `❌ 获取网站列表失败!\n` +
+                    `错误: ${error.message}`, 'error');
+            }
+        }
+
+        function clearResult() {
+            document.getElementById('test-result').style.display = 'none';
+            document.getElementById('api-result').style.display = 'none';
+            currentTaskId = null;
+        }
+
+        // 页面加载时自动检查API
+        window.addEventListener('load', function() {
+            console.log('🧪 传统模式测试工具已加载');
+            testApiExists();
+        });
+    </script>
+</body>
+</html>

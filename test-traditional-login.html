@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>传统登录API测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        button:hover { background-color: #005a87; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .result.success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .result.error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .result.loading { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 传统登录API测试</h1>
+        <p>测试 /api/traditional-auto-login 接口</p>
+    </div>
+
+    <div class="test-card">
+        <h3>📝 登录信息</h3>
+        <div class="form-row">
+            <div class="form-group">
+                <label>网站名称:</label>
+                <input type="text" id="siteName" value="测试网站" placeholder="输入网站名称">
+            </div>
+            <div class="form-group">
+                <label>网站URL:</label>
+                <input type="text" id="siteUrl" value="https://example.com/login" placeholder="输入登录页面URL">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>用户名:</label>
+                <input type="text" id="username" value="testuser" placeholder="输入用户名">
+            </div>
+            <div class="form-group">
+                <label>密码:</label>
+                <input type="password" id="password" value="testpass" placeholder="输入密码">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>验证码类型:</label>
+                <select id="captchaType">
+                    <option value="无">无验证码</option>
+                    <option value="数字验证码">数字验证码</option>
+                    <option value="字母验证码">字母验证码</option>
+                    <option value="混合验证码">混合验证码</option>
+                    <option value="图片验证码">图片验证码</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>使用OCR:</label>
+                <select id="useOCR">
+                    <option value="true">启用OCR</option>
+                    <option value="false">禁用OCR</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>备注:</label>
+            <textarea id="notes" rows="2" placeholder="输入备注信息">传统登录API测试</textarea>
+        </div>
+        
+        <button onclick="testTraditionalLogin()">测试传统登录</button>
+        <button onclick="testWithPreset('baidu')">测试百度登录</button>
+        <button onclick="testWithPreset('github')">测试GitHub登录</button>
+        <button onclick="clearResult()">清空结果</button>
+        
+        <div id="test-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-card">
+        <h3>🔍 API状态检查</h3>
+        <button onclick="checkApiHealth()">检查API健康状态</button>
+        <button onclick="checkDependencies()">检查依赖项</button>
+        <div id="health-result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        function showResult(elementId, message, type = 'loading') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.textContent = message;
+        }
+
+        async function testTraditionalLogin() {
+            const siteName = document.getElementById('siteName').value;
+            const siteUrl = document.getElementById('siteUrl').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const captchaType = document.getElementById('captchaType').value;
+            const useOCR = document.getElementById('useOCR').value === 'true';
+            const notes = document.getElementById('notes').value;
+
+            if (!siteName || !siteUrl || !username || !password) {
+                showResult('test-result', '请填写所有必要字段', 'error');
+                return;
+            }
+
+            showResult('test-result', '正在启动传统登录测试...', 'loading');
+
+            try {
+                const requestData = {
+                    name: siteName,
+                    url: siteUrl,
+                    username: username,
+                    password: password,
+                    captchaType: captchaType,
+                    useOCR: useOCR,
+                    notes: notes
+                };
+
+                console.log('🚀 发送传统登录请求:', requestData);
+
+                const response = await fetch('/api/traditional-auto-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showResult('test-result', 
+                        `✅ 传统登录测试成功!\n` +
+                        `消息: ${data.message}\n` +
+                        `会话ID: ${data.data.sessionId}\n` +
+                        `网站名称: ${data.data.siteName}\n` +
+                        `登录状态: ${data.data.loginStatus}\n` +
+                        `用户名填写: ${data.data.usernameFilled ? '成功' : '失败'}\n` +
+                        `密码填写: ${data.data.passwordFilled ? '成功' : '失败'}\n` +
+                        `登录按钮点击: ${data.data.loginButtonClicked ? '成功' : '失败'}\n` +
+                        `验证码检测: ${data.data.captchaDetected ? '是' : '否'}\n` +
+                        `OCR使用: ${data.data.ocrUsed ? '是' : '否'}\n` +
+                        `调试信息: ${data.data.debugInfo ? data.data.debugInfo.join('\n') : '无'}`, 'success');
+                } else {
+                    showResult('test-result', 
+                        `❌ 传统登录测试失败!\n` +
+                        `状态码: ${response.status}\n` +
+                        `错误: ${data.error || '未知错误'}\n` +
+                        `详情: ${data.details ? JSON.stringify(data.details, null, 2) : '无'}`, 'error');
+                }
+            } catch (error) {
+                showResult('test-result', 
+                    `❌ 网络错误!\n` +
+                    `错误: ${error.message}`, 'error');
+            }
+        }
+
+        function testWithPreset(type) {
+            if (type === 'baidu') {
+                document.getElementById('siteName').value = '百度账号';
+                document.getElementById('siteUrl').value = 'https://passport.baidu.com/v2/?login';
+                document.getElementById('username').value = 'test@example.com';
+                document.getElementById('password').value = 'testpassword';
+                document.getElementById('captchaType').value = '混合验证码';
+                document.getElementById('notes').value = '百度登录测试';
+            } else if (type === 'github') {
+                document.getElementById('siteName').value = 'GitHub';
+                document.getElementById('siteUrl').value = 'https://github.com/login';
+                document.getElementById('username').value = 'testuser';
+                document.getElementById('password').value = 'testpassword';
+                document.getElementById('captchaType').value = '无';
+                document.getElementById('notes').value = 'GitHub登录测试';
+            }
+            
+            showResult('test-result', `已设置${type === 'baidu' ? '百度' : 'GitHub'}登录预设参数，点击"测试传统登录"开始测试`, 'success');
+        }
+
+        async function checkApiHealth() {
+            showResult('health-result', '正在检查API健康状态...', 'loading');
+
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult('health-result', 
+                        `✅ API健康检查通过!\n` +
+                        `状态: ${data.status}\n` +
+                        `时间戳: ${data.timestamp}\n` +
+                        `版本: ${data.version}\n` +
+                        `环境: ${data.environment}\n` +
+                        `Notion配置: ${data.notion ? '已配置' : '未配置'}\n` +
+                        `功能: ${JSON.stringify(data.features, null, 2)}`, 'success');
+                } else {
+                    showResult('health-result', 
+                        `❌ API健康检查失败!\n` +
+                        `状态码: ${response.status}\n` +
+                        `错误: ${data.error || '未知错误'}`, 'error');
+                }
+            } catch (error) {
+                showResult('health-result', 
+                    `❌ 健康检查网络错误!\n` +
+                    `错误: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkDependencies() {
+            showResult('health-result', '正在检查依赖项...', 'loading');
+
+            // 检查传统登录API是否存在
+            try {
+                const response = await fetch('/api/traditional-auto-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({}) // 空请求，应该返回400错误
+                });
+
+                if (response.status === 400) {
+                    showResult('health-result', 
+                        `✅ 传统登录API存在!\n` +
+                        `状态码: ${response.status} (预期的400错误)\n` +
+                        `这说明API路由正常工作`, 'success');
+                } else {
+                    const data = await response.json();
+                    showResult('health-result', 
+                        `⚠️ 传统登录API响应异常!\n` +
+                        `状态码: ${response.status}\n` +
+                        `响应: ${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult('health-result', 
+                    `❌ 传统登录API不可用!\n` +
+                    `错误: ${error.message}`, 'error');
+            }
+        }
+
+        function clearResult() {
+            document.getElementById('test-result').style.display = 'none';
+            document.getElementById('health-result').style.display = 'none';
+        }
+
+        // 页面加载时自动检查API状态
+        window.addEventListener('load', function() {
+            console.log('🧪 传统登录API测试工具已加载');
+            checkApiHealth();
+        });
+    </script>
+</body>
+</html>

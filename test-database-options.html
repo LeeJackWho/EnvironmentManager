@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库选项 API 测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #005a87;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        button.success {
+            background-color: #28a745;
+        }
+        button.error {
+            background-color: #dc3545;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .result.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .result.loading {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #007cba;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007cba;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗄️ 数据库选项 API 测试</h1>
+        <p>测试 /api/database/options 接口的稳定性和性能</p>
+    </div>
+
+    <div class="test-card">
+        <h3>🔧 API 测试控制</h3>
+        <button onclick="testSingle()">单次测试</button>
+        <button onclick="testMultiple()">连续测试 (5次)</button>
+        <button onclick="testStress()">压力测试 (10次并发)</button>
+        <button onclick="clearResults()">清空结果</button>
+        <div id="control-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-card">
+        <h3>📊 测试统计</h3>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-requests">0</div>
+                <div class="stat-label">总请求数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="success-requests">0</div>
+                <div class="stat-label">成功请求</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="failed-requests">0</div>
+                <div class="stat-label">失败请求</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avg-response-time">0ms</div>
+                <div class="stat-label">平均响应时间</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="cache-hits">0</div>
+                <div class="stat-label">缓存命中</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="success-rate">0%</div>
+                <div class="stat-label">成功率</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h3>📋 测试结果</h3>
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        let testStats = {
+            total: 0,
+            success: 0,
+            failed: 0,
+            responseTimes: [],
+            cacheHits: 0
+        };
+
+        function updateStats() {
+            document.getElementById('total-requests').textContent = testStats.total;
+            document.getElementById('success-requests').textContent = testStats.success;
+            document.getElementById('failed-requests').textContent = testStats.failed;
+            
+            const avgTime = testStats.responseTimes.length > 0 
+                ? Math.round(testStats.responseTimes.reduce((a, b) => a + b, 0) / testStats.responseTimes.length)
+                : 0;
+            document.getElementById('avg-response-time').textContent = avgTime + 'ms';
+            
+            document.getElementById('cache-hits').textContent = testStats.cacheHits;
+            
+            const successRate = testStats.total > 0 
+                ? Math.round((testStats.success / testStats.total) * 100)
+                : 0;
+            document.getElementById('success-rate').textContent = successRate + '%';
+        }
+
+        function showResult(message, type = 'loading') {
+            const element = document.getElementById('control-result');
+            element.style.display = 'block';
+            element.className = `result ${type}`;
+            element.textContent = message;
+        }
+
+        function addTestResult(result) {
+            const resultsContainer = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${result.success ? 'success' : 'error'}`;
+            resultDiv.style.marginBottom = '10px';
+            
+            const timestamp = new Date().toLocaleTimeString();
+            resultDiv.textContent = `[${timestamp}] ${result.message}`;
+            
+            resultsContainer.insertBefore(resultDiv, resultsContainer.firstChild);
+            
+            // 只保留最新的20个结果
+            while (resultsContainer.children.length > 20) {
+                resultsContainer.removeChild(resultsContainer.lastChild);
+            }
+        }
+
+        async function testDatabaseOptions() {
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch('/api/database/options');
+                const responseTime = Date.now() - startTime;
+                const data = await response.json();
+                
+                testStats.total++;
+                testStats.responseTimes.push(responseTime);
+                
+                if (response.ok && data.success) {
+                    testStats.success++;
+                    if (data.cached) {
+                        testStats.cacheHits++;
+                    }
+                    
+                    const message = `✅ 成功 (${responseTime}ms) - ${data.cached ? '缓存' : '新请求'}\n` +
+                        `环境分类: ${data.data.options.Category.length}个\n` +
+                        `验证码类型: ${data.data.options.CaptchaType.length}个\n` +
+                        `状态选项: ${data.data.options.Status.length}个`;
+                    
+                    addTestResult({ success: true, message });
+                    return { success: true, responseTime, data };
+                } else {
+                    testStats.failed++;
+                    const message = `❌ 失败 (${responseTime}ms) - ${data.error || '未知错误'}`;
+                    addTestResult({ success: false, message });
+                    return { success: false, responseTime, error: data.error };
+                }
+            } catch (error) {
+                const responseTime = Date.now() - startTime;
+                testStats.total++;
+                testStats.failed++;
+                testStats.responseTimes.push(responseTime);
+                
+                const message = `❌ 网络错误 (${responseTime}ms) - ${error.message}`;
+                addTestResult({ success: false, message });
+                return { success: false, responseTime, error: error.message };
+            } finally {
+                updateStats();
+            }
+        }
+
+        async function testSingle() {
+            showResult('正在进行单次测试...', 'loading');
+            
+            const result = await testDatabaseOptions();
+            
+            if (result.success) {
+                showResult(`✅ 单次测试成功 (${result.responseTime}ms)`, 'success');
+            } else {
+                showResult(`❌ 单次测试失败: ${result.error}`, 'error');
+            }
+        }
+
+        async function testMultiple() {
+            showResult('正在进行连续测试 (5次)...', 'loading');
+            
+            const results = [];
+            for (let i = 1; i <= 5; i++) {
+                showResult(`正在进行第 ${i}/5 次测试...`, 'loading');
+                const result = await testDatabaseOptions();
+                results.push(result);
+                
+                // 每次测试间隔1秒
+                if (i < 5) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+            
+            const successCount = results.filter(r => r.success).length;
+            const avgTime = Math.round(results.reduce((sum, r) => sum + r.responseTime, 0) / results.length);
+            
+            showResult(`✅ 连续测试完成: ${successCount}/5 成功，平均响应时间 ${avgTime}ms`, 
+                successCount === 5 ? 'success' : 'error');
+        }
+
+        async function testStress() {
+            showResult('正在进行压力测试 (10次并发)...', 'loading');
+            
+            const startTime = Date.now();
+            const promises = [];
+            
+            for (let i = 0; i < 10; i++) {
+                promises.push(testDatabaseOptions());
+            }
+            
+            const results = await Promise.all(promises);
+            const totalTime = Date.now() - startTime;
+            
+            const successCount = results.filter(r => r.success).length;
+            const avgTime = Math.round(results.reduce((sum, r) => sum + r.responseTime, 0) / results.length);
+            
+            showResult(`✅ 压力测试完成: ${successCount}/10 成功，总耗时 ${totalTime}ms，平均响应时间 ${avgTime}ms`, 
+                successCount >= 8 ? 'success' : 'error');
+        }
+
+        function clearResults() {
+            document.getElementById('test-results').innerHTML = '';
+            testStats = {
+                total: 0,
+                success: 0,
+                failed: 0,
+                responseTimes: [],
+                cacheHits: 0
+            };
+            updateStats();
+            showResult('结果已清空', 'success');
+            setTimeout(() => {
+                document.getElementById('control-result').style.display = 'none';
+            }, 2000);
+        }
+
+        // 页面加载时进行一次测试
+        window.addEventListener('load', function() {
+            console.log('🧪 数据库选项 API 测试工具已加载');
+            testSingle();
+        });
+    </script>
+</body>
+</html>
