@@ -121,7 +121,8 @@ async function executeLoginTest(taskId: string, site: any, mode: string) {
       username: site.username,
       password: site.password,
       captchaType: site.captchaType || '无',
-      notes: `异步任务测试 - ${site.name}`
+      notes: `异步任务测试 - ${site.name}`,
+      useMidscene: mode === 'midscene' // 🔧 修复：根据模式设置 useMidscene 参数
     };
 
     console.log(`📡 调用登录API: ${apiEndpoint}`);

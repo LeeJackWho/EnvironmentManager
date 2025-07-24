@@ -33,7 +33,7 @@ export async function PUT(
     // 初始化 Notion 客户端
     const notion = new Client({
       auth: process.env.NOTION_API_KEY,
-      timeoutMs: 15000,
+      timeoutMs: 30000, // 增加超时时间到30秒
     });
 
     console.log(`🔄 更新网站配置: ${name} (ID: ${id})`);
@@ -169,7 +169,7 @@ export async function DELETE(
     // 初始化 Notion 客户端
     const notion = new Client({
       auth: apiKey,
-      timeoutMs: 15000,
+      timeoutMs: 30000, // 增加超时时间到30秒
     });
 
     console.log(`🗑️ 禁用网站配置 (ID: ${id})`);
@@ -235,7 +235,7 @@ export async function GET(
     // 初始化 Notion 客户端
     const notion = new Client({
       auth: process.env.NOTION_API_KEY,
-      timeoutMs: 15000,
+      timeoutMs: 30000, // 增加超时时间到30秒
     });
 
     console.log(`📖 获取网站配置 (ID: ${id})`);

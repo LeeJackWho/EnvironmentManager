@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Midscene 直接集成测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-direct {
+            background: #28a745;
+            color: white;
+        }
+        .feature-highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .feature-highlight h3 {
+            margin-top: 0;
+            font-size: 1.3em;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 5px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        .feature-list li:before {
+            content: "⚡";
+            position: absolute;
+            left: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-right: 10px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 2px solid #ddd;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        .config-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        .config-display h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .config-item {
+            margin-bottom: 8px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ Midscene 直接集成测试 <span class="status-badge status-direct">DIRECT</span></h1>
+        
+        <div class="feature-highlight">
+            <h3>🚀 直接集成优势</h3>
+            <ul class="feature-list">
+                <li>无需 MCP 服务器，直接调用 AI API</li>
+                <li>更简单的配置和部署</li>
+                <li>更快的响应速度</li>
+                <li>支持 OpenRouter + Qwen2.5-VL 免费模型</li>
+                <li>完整的错误处理和回退机制</li>
+            </ul>
+        </div>
+
+        <div class="config-display">
+            <h4>📋 当前配置状态</h4>
+            <div class="config-item">🔑 API Key: OpenRouter (sk-or-v1-...)</div>
+            <div class="config-item">🌐 Base URL: https://openrouter.ai/api/v1</div>
+            <div class="config-item">🤖 Model: qwen/qwen2.5-vl-72b-instruct:free</div>
+            <div class="config-item">⚡ Integration: Direct (No MCP)</div>
+        </div>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label for="name">网站名称:</label>
+                <input type="text" id="name" value="直接集成测试网站" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="url">登录页面 URL:</label>
+                <input type="url" id="url" value="https://example.com/direct-login" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="username">用户名:</label>
+                <input type="text" id="username" value="direct_user" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">密码:</label>
+                <input type="password" id="password" value="direct_pass" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="captchaType">验证码类型:</label>
+                <select id="captchaType">
+                    <option value="图形" selected>图形验证码（测试 AI 识别）</option>
+                    <option value="滑动">滑动验证码</option>
+                    <option value="点击">点击验证码</option>
+                    <option value="无">无验证码</option>
+                </select>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="useMidscene" checked>
+                <label for="useMidscene">⚡ 启用 Midscene 直接集成模式</label>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="enableDebug" checked>
+                <label for="enableDebug">🔍 启用详细调试日志</label>
+            </div>
+            
+            <div class="form-group">
+                <label for="notes">测试备注:</label>
+                <textarea id="notes" rows="3" placeholder="直接集成测试...">测试 Midscene 直接集成：OpenRouter + Qwen2.5-VL + 验证码识别</textarea>
+            </div>
+            
+            <button type="submit" id="testBtn">⚡ 开始直接集成测试</button>
+            <button type="button" id="clearBtn">🗑️ 清空结果</button>
+        </form>
+        
+        <div id="result" class="result info" style="display: none;"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('testForm');
+        const testBtn = document.getElementById('testBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const result = document.getElementById('result');
+
+        // 测试直接集成自动登录
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            testBtn.disabled = true;
+            testBtn.textContent = '🔄 直接集成测试中...';
+            
+            showResult('⚡ 开始 Midscene 直接集成测试...\n\n🚀 测试特性:\n- 直接 AI API 调用\n- OpenRouter + Qwen2.5-VL\n- 无 MCP 依赖\n- 智能验证码识别\n\n', 'info');
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                url: document.getElementById('url').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                captchaType: document.getElementById('captchaType').value,
+                useMidscene: document.getElementById('useMidscene').checked,
+                notes: document.getElementById('notes').value,
+                direct: true, // 标记为直接集成测试
+                debug: document.getElementById('enableDebug').checked
+            };
+            
+            try {
+                const startTime = Date.now();
+                
+                const response = await fetch('/api/enhanced-auto-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                const data = await response.json();
+                
+                // 分析结果类型
+                let resultType = 'info';
+                let statusBadge = '';
+                
+                if (data.success) {
+                    resultType = 'success';
+                    statusBadge = '✅ 直接集成测试成功';
+                } else {
+                    resultType = 'warning';
+                    statusBadge = '⚠️ 部分功能完成';
+                }
+                
+                // 检查是否使用了直接集成
+                const resultText = JSON.stringify(data, null, 2);
+                if (resultText.includes('直接客户端') || resultText.includes('OpenRouter')) {
+                    statusBadge += ' (直接集成)';
+                } else if (resultText.includes('模拟')) {
+                    statusBadge += ' (模拟模式)';
+                } else {
+                    statusBadge += ' (传统模式)';
+                }
+                
+                const resultMessage = `${statusBadge}
+执行时间: ${duration}ms
+
+📊 详细结果:
+${JSON.stringify(data, null, 2)}
+
+🔍 功能验证:
+- 直接集成模式: ${formData.useMidscene ? '✅ 已启用' : '❌ 未启用'}
+- OpenRouter API: ${resultText.includes('OpenRouter') ? '✅ 已使用' : '⚠️ 未使用'}
+- Qwen2.5-VL 模型: ${resultText.includes('qwen') ? '✅ 已使用' : '⚠️ 未使用'}
+- 验证码处理: ${data.data?.loginResult?.captchaDetected ? '✅ 已检测' : 'ℹ️ 未检测到'}
+- 调试信息记录: ${data.data?.sessionDir ? '✅ 已保存' : '❌ 未保存'}
+
+💡 测试说明:
+直接集成模式绕过 MCP，直接调用 OpenRouter API。
+使用免费的 Qwen2.5-VL 模型进行验证码识别。
+查看调试目录获取详细的执行步骤和截图记录。`;
+                
+                showResult(resultMessage, resultType);
+                
+            } catch (error) {
+                showResult(`❌ 直接集成测试失败: ${error.message}
+
+🔧 可能原因:
+1. 服务器未启动 (npm run dev)
+2. OpenRouter API 不可用
+3. 网络连接问题
+4. API Key 配置错误
+
+💡 解决建议:
+1. 确保开发服务器正在运行
+2. 检查 OpenRouter API Key 是否有效
+3. 验证网络连接到 openrouter.ai
+4. 查看浏览器控制台错误信息`, 'error');
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = '⚡ 开始直接集成测试';
+            }
+        });
+
+        // 清空结果
+        clearBtn.addEventListener('click', () => {
+            result.style.display = 'none';
+            result.textContent = '';
+        });
+
+        function showResult(text, type) {
+            result.textContent = text;
+            result.className = `result ${type}`;
+            result.style.display = 'block';
+            result.scrollTop = result.scrollHeight;
+        }
+
+        // 页面加载时显示说明
+        window.addEventListener('load', () => {
+            showResult(`⚡ Midscene 直接集成测试工具已就绪
+
+🚀 直接集成优势:
+✨ 无 MCP 依赖 - 直接调用 AI API，更简单可靠
+✨ OpenRouter 集成 - 使用免费的 Qwen2.5-VL 模型
+✨ 中文优化 - Qwen 模型对中文验证码识别更好
+✨ 快速响应 - 减少中间层，提高处理速度
+✨ 完整回退 - API 失败时自动使用模拟模式
+
+📋 测试流程:
+1. 填写测试网站信息
+2. 选择验证码类型（推荐图形验证码）
+3. 确保启用 Midscene 直接集成模式
+4. 点击"开始直接集成测试"
+5. 观察是否显示 "OpenRouter" 和 "直接集成"
+
+🎯 预期结果:
+- 显示 "Midscene 直接客户端初始化成功"
+- 使用 OpenRouter API 进行验证码分析
+- 调用 Qwen2.5-VL 模型进行图像识别
+- 生成智能的验证码处理建议
+- 记录完整的调试信息
+
+现在开始测试直接集成的 Midscene 功能！`, 'info');
+        });
+    </script>
+</body>
+</html>

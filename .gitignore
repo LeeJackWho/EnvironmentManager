@@ -60,6 +60,13 @@ screenshots/
 playwright-report/
 test-results/
 
+# 调试和测试文件
+src/app/debug/test-files/debug-screenshots/
+src/app/debug/test-files/*.png
+src/app/debug/test-files/*.jpg
+src/app/debug/test-files/*.jpeg
+src/app/debug/test-files/captcha-test-report.json
+
 # 临时文件和缓存
 temp/
 tmp/

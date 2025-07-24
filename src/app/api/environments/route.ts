@@ -108,7 +108,7 @@ export async function GET() {
     // 获取数据库字段选项（包含颜色信息）
     const notion = new Client({
       auth: apiKey!,
-      timeoutMs: 15000,
+      timeoutMs: 30000, // 增加超时时间到30秒
     });
 
     const databaseInfo = await notion.databases.retrieve({

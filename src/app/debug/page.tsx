@@ -127,6 +127,62 @@ export default function DebugPage() {
         </div>
       </div>
 
+      {/* 测试文件区域 */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <FiDatabase />
+          📁 测试文件
+        </h2>
+        <p className="text-gray-600 mb-4">
+          所有测试和调试相关的文件都已整理到 <code className="bg-gray-100 px-2 py-1 rounded">src/app/debug/test-files/</code> 目录中
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-gray-900 mb-2">🧪 验证码测试文件</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• test-captcha-*.js - 验证码功能测试</li>
+              <li>• test-captcha-*.html - 验证码调试页面</li>
+              <li>• test-midscene-*.* - Midscene.js 测试</li>
+            </ul>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-gray-900 mb-2">🔧 配置测试文件</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• check-midscene-models.js - 模型检查</li>
+              <li>• fix-midscene-config.js - 配置修复</li>
+              <li>• validate-midscene-config.js - 配置验证</li>
+            </ul>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-gray-900 mb-2">🌐 API 测试文件</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• test-api-*.js - API 接口测试</li>
+              <li>• test-sites-api.html - 网站 API 测试</li>
+              <li>• test-database-*.html - 数据库测试</li>
+            </ul>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="font-semibold text-gray-900 mb-2">📊 其他测试文件</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• test-traditional-*.html - 传统模式测试</li>
+              <li>• test-enhanced-*.html - 增强模式测试</li>
+              <li>• captcha-test-report.json - 测试报告</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-blue-800 text-sm">
+            💡 <strong>使用说明：</strong> 这些测试文件可以直接在浏览器中打开（HTML文件）或通过 Node.js 运行（JS文件）。
+            所有新的测试和调试文件都应该放在这个目录中，保持项目结构的整洁。
+          </p>
+        </div>
+      </div>
+
       {/* 常见问题 */}
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
         <h3 className="font-medium text-yellow-900 mb-3">🔧 常见问题</h3>

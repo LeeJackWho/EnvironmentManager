@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     // 初始化 Notion 客户端
     const notion = new Client({
       auth: apiKey,
-      timeoutMs: 15000,
+      timeoutMs: 30000, // 增加超时时间到30秒
     });
 
     console.log('🔗 创建 Notion 页面...');

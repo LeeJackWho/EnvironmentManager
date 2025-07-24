@@ -51,8 +51,8 @@ export default function EnvironmentsPage() {
     url: '',
     username: '',
     password: '',
-    environment: '测试环境',
-    captchaType: '无',
+    environment: '', // 初始为空，等待从数据库选项加载
+    captchaType: '',
     notes: ''
   });
   const [submitting, setSubmitting] = useState(false);

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证码调试测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .debug-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .debug-section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 验证码调试测试工具</h1>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label for="name">网站名称:</label>
+                <input type="text" id="name" value="测试网站" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="url">登录页面 URL:</label>
+                <input type="url" id="url" value="https://example.com/login" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="username">用户名:</label>
+                <input type="text" id="username" value="testuser" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">密码:</label>
+                <input type="password" id="password" value="testpass" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="captchaType">验证码类型:</label>
+                <select id="captchaType">
+                    <option value="无">无</option>
+                    <option value="图形">图形验证码</option>
+                    <option value="滑动">滑动验证码</option>
+                    <option value="点击">点击验证码</option>
+                    <option value="短信">短信验证码</option>
+                </select>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="useMidscene" checked>
+                <label for="useMidscene">使用 Midscene.js 智能识别</label>
+            </div>
+            
+            <div class="form-group">
+                <label for="notes">备注:</label>
+                <textarea id="notes" rows="3" placeholder="测试备注信息...">验证码调试测试</textarea>
+            </div>
+            
+            <button type="submit" id="testBtn">🚀 开始测试</button>
+            <button type="button" id="debugEnvBtn">🔍 调试环境</button>
+            <button type="button" id="clearBtn">🗑️ 清空结果</button>
+        </form>
+        
+        <div class="debug-section">
+            <h3>🛠️ 调试选项</h3>
+            <div class="checkbox-group">
+                <input type="checkbox" id="enableDebug" checked>
+                <label for="enableDebug">启用详细调试日志</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="saveScreenshots" checked>
+                <label for="saveScreenshots">保存调试截图</label>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="generateReport" checked>
+                <label for="generateReport">生成调试报告</label>
+            </div>
+        </div>
+        
+        <div id="result" class="result info" style="display: none;"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('testForm');
+        const testBtn = document.getElementById('testBtn');
+        const debugEnvBtn = document.getElementById('debugEnvBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const result = document.getElementById('result');
+
+        // 测试增强自动登录
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            testBtn.disabled = true;
+            testBtn.textContent = '🔄 测试中...';
+            
+            showResult('🚀 开始验证码调试测试...', 'info');
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                url: document.getElementById('url').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                captchaType: document.getElementById('captchaType').value,
+                useMidscene: document.getElementById('useMidscene').checked,
+                notes: document.getElementById('notes').value,
+                debug: {
+                    enableDebug: document.getElementById('enableDebug').checked,
+                    saveScreenshots: document.getElementById('saveScreenshots').checked,
+                    generateReport: document.getElementById('generateReport').checked
+                }
+            };
+            
+            try {
+                const response = await fetch('/api/enhanced-auto-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult(`✅ 测试完成!\n\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    showResult(`❌ 测试失败:\n\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ 请求失败: ${error.message}`, 'error');
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = '🚀 开始测试';
+            }
+        });
+
+        // 调试环境
+        debugEnvBtn.addEventListener('click', async () => {
+            debugEnvBtn.disabled = true;
+            debugEnvBtn.textContent = '🔄 检查中...';
+            
+            showResult('🔍 正在检查环境配置...', 'info');
+            
+            try {
+                // 这里可以添加环境检查的 API 调用
+                const envInfo = {
+                    timestamp: new Date().toISOString(),
+                    browser: navigator.userAgent,
+                    location: window.location.href,
+                    localStorage: Object.keys(localStorage).length,
+                    sessionStorage: Object.keys(sessionStorage).length
+                };
+                
+                showResult(`🔍 环境信息:\n\n${JSON.stringify(envInfo, null, 2)}`, 'info');
+            } catch (error) {
+                showResult(`❌ 环境检查失败: ${error.message}`, 'error');
+            } finally {
+                debugEnvBtn.disabled = false;
+                debugEnvBtn.textContent = '🔍 调试环境';
+            }
+        });
+
+        // 清空结果
+        clearBtn.addEventListener('click', () => {
+            result.style.display = 'none';
+            result.textContent = '';
+        });
+
+        function showResult(text, type) {
+            result.textContent = text;
+            result.className = `result ${type}`;
+            result.style.display = 'block';
+            result.scrollTop = result.scrollHeight;
+        }
+
+        // 页面加载时显示说明
+        window.addEventListener('load', () => {
+            showResult(`🔍 验证码调试测试工具已就绪
+
+📋 使用说明:
+1. 填写测试网站信息
+2. 选择验证码类型
+3. 启用 Midscene.js 智能识别（推荐）
+4. 点击"开始测试"进行验证码处理测试
+5. 查看详细的调试日志和错误信息
+
+🛠️ 调试功能:
+- 详细的执行步骤记录
+- 自动截图保存
+- 错误诊断和建议
+- 配置验证检查
+
+⚠️ 注意事项:
+- 确保已正确配置 MIDSCENE_API_KEY
+- 测试过程中浏览器会自动打开
+- 调试信息会保存在 .browser-sessions 目录`, 'info');
+        });
+    </script>
+</body>
+</html>

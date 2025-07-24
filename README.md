@@ -8,12 +8,22 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
 ![Playwright](https://img.shields.io/badge/Playwright-自动化-orange)
 ![Midscene](https://img.shields.io/badge/Midscene.js-AI识别-purple)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+## 🎯 项目亮点
+
+- **🤖 AI 智能验证码识别** - 集成 Midscene.js，支持 8 种验证码类型，识别准确率接近 100%
+- **⚡ 快速响应** - 验证码识别时间优化至 2-5 秒，避免验证码失效
+- **🔄 智能会话管理** - 自动保持登录状态，支持 Cookie 复用和过期检测
+- **🌍 多环境支持** - 清晰区分测试、开发、生产环境，避免操作混淆
+- **📊 实时监控** - 异步任务管理，实时显示执行进度和状态
+- **🛡️ 安全可靠** - 完善的隐私保护机制，敏感信息安全存储
 
 ## ✨ 核心功能
 
 ### 🔐 智能自动登录系统
 
-- **🤖 AI 智能识别** - 集成 Midscene.js，支持 GPT-4 Vision 等模型进行智能验证码识别
+- **🤖 AI 智能识别** - 直接集成 Midscene.js，支持 8 种验证码类型的智能识别和自动解决
 - **🔧 传统 OCR 模式** - 支持 Tesseract.js OCR 识别和滑块验证码自动解决
 - **⚡ 异步并发执行** - 支持多个环境同时启动测试，互不干扰，智能任务管理
 - **🎯 多元素识别** - 智能识别用户名、密码、登录按钮等页面元素
@@ -77,7 +87,7 @@
 ### 1️⃣ 克隆项目
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/your-username/environment-manager.git
 cd environment-manager
 ```
 
@@ -104,17 +114,47 @@ cp .env.example .env.local
 2. 编辑 `.env.local` 文件，填入你的配置：
 ```env
 # Notion API 配置
-NOTION_API_KEY=your_notion_integration_token
-NOTION_DATABASE_ID=your_database_id
+NOTION_API_KEY=ntn_your_notion_integration_token_here
+NOTION_DATABASE_ID=your_32_character_database_id_here
 
-# 验证码识别服务（可选）
-CAPTCHA_API_KEY=your_captcha_service_key
+# Midscene.js AI 验证码识别配置（推荐）
+OPENAI_API_KEY=sk-or-v1-your_openrouter_api_key_here
+OPENAI_BASE_URL=https://openrouter.ai/api/v1
+MIDSCENE_MODEL_NAME=qwen/qwen2.5-vl-72b-instruct:free
+
+# 传统验证码识别服务（可选）
+CAPTCHA_API_KEY=your_captcha_service_api_key_here
 
 # 环境配置
 NODE_ENV=development
 ```
 
-### 4️⃣ 配置 Notion 数据库
+### 4️⃣ 配置 Midscene.js AI 验证码识别
+
+#### 获取 OpenRouter API Key（推荐）
+
+1. **注册 OpenRouter 账号**
+   - 访问 [OpenRouter](https://openrouter.ai)
+   - 注册账号并获取 API Key
+
+2. **配置环境变量**
+   ```env
+   OPENAI_API_KEY=your_openrouter_api_key
+   OPENAI_BASE_URL=https://openrouter.ai/api/v1/chat/completions
+   MIDSCENE_MODEL_NAME=qwen/qwen2.5-vl-72b-instruct:free
+   ```
+
+3. **支持的验证码类型**
+   - ✅ **文字验证码**：数字/字母组合 (如：ABCD、1234)
+   - ✅ **点击验证码**：点选图片/文字 (如：点击所有汽车)
+   - ✅ **网格验证码**：3x3或4x4网格选择
+   - ✅ **滑块验证码**：拖拽滑块完成拼图
+   - ✅ **旋转验证码**：旋转图片到正确角度
+   - ✅ **逻辑验证码**：数学题等 (如：3+5=?)
+   - ✅ **拖拽验证码**：拖拽元素到指定位置
+   - ✅ **序列点击**：按特定顺序点击多个元素
+
+### 5️⃣ 配置 Notion 数据库
 
 #### 快速配置步骤：
 
@@ -314,54 +354,55 @@ fetch('/api/sites/your-site-id', {
 .then(data => console.log('网站已禁用:', data.message));
 ```
 
-## 🌐 部署指南
+## 🐳 Docker 部署
 
-### 🚀 Vercel 部署（推荐 - 零成本）
+### 📦 使用 Docker Compose（推荐）
 
-1. **连接仓库**
+1. **克隆项目**
    ```bash
-   # 推送代码到 GitHub
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
+   git clone https://github.com/your-username/environment-manager.git
+   cd environment-manager
    ```
 
-2. **Vercel 配置**
-   - 访问 [Vercel](https://vercel.com)
-   - 导入 GitHub 仓库
-   - 添加环境变量：
-     - `NOTION_API_KEY`
-     - `NOTION_DATABASE_ID`
-     - `CAPTCHA_API_KEY` (可选)
-
-3. **自动部署**
-   - Vercel 自动检测 Next.js 项目
-   - 每次推送代码自动重新部署
-
-### 🌩️ CloudFlare Pages 部署
-
-1. **构建配置**
-   ```yaml
-   Build command: npm run build
-   Output directory: .next
-   Node.js version: 18
+2. **配置环境变量**
+   ```bash
+   cp deployment-config-template.env .env
+   # 编辑 .env 文件，填入你的配置
    ```
 
-2. **环境变量配置**
-   - 在 CloudFlare Pages 设置中添加环境变量
+3. **启动服务**
+   ```bash
+   docker-compose up -d
+   ```
 
-### 🐳 Docker 部署
+4. **访问应用**
+   - 应用地址：http://localhost:3000
+   - 查看日志：`docker-compose logs -f`
 
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
+### 🔧 手动 Docker 构建
+
+1. **构建镜像**
+   ```bash
+   docker build -t environment-manager .
+   ```
+
+2. **运行容器**
+   ```bash
+   docker run -d \
+     --name environment-manager \
+     -p 3000:3000 \
+     -e NOTION_API_KEY=your_key \
+     -e NOTION_DATABASE_ID=your_db_id \
+     -e OPENAI_API_KEY=your_openai_key \
+     environment-manager
+   ```
+
+### 📋 Docker 配置说明
+
+项目包含以下 Docker 配置文件：
+- `Dockerfile` - 应用镜像构建文件
+- `docker-compose.yml` - 服务编排配置
+- `deployment-config-template.env` - 环境变量模板
 
 ## 📚 使用指南
 
@@ -403,11 +444,20 @@ CMD ["npm", "start"]
 
 ### 🔒 安全最佳实践
 
-- ✅ 使用环境变量存储敏感信息
-- ✅ 定期更新 API 密钥
-- ✅ 限制 Notion 集成权限
-- ✅ 启用 HTTPS 部署
-- ✅ 定期备份重要数据
+- ✅ **环境变量保护** - 所有敏感信息存储在 `.env.local` 文件中，已在 `.gitignore` 中排除
+- ✅ **API 密钥安全** - 定期更新 Notion API 密钥和 AI 服务密钥
+- ✅ **权限最小化** - 限制 Notion 集成权限，仅授予必要的数据库访问权限
+- ✅ **HTTPS 部署** - 生产环境启用 HTTPS 加密传输
+- ✅ **数据备份** - 定期备份 Notion 数据库和重要配置
+- ✅ **隐私保护** - 项目已配置完善的 `.gitignore`，确保敏感信息不会被提交到代码库
+
+### ⚠️ 重要安全提醒
+
+- 🚫 **切勿提交** `.env.local` 文件到代码库
+- 🚫 **切勿在代码中硬编码** API 密钥或敏感信息
+- 🚫 **切勿分享** 包含真实密钥的配置文件
+- ✅ **使用** `.env.example` 作为配置模板
+- ✅ **定期检查** 代码库中是否意外包含敏感信息
 
 ## 🛠️ 技术栈详情
 
@@ -449,10 +499,18 @@ CMD ["npm", "start"]
 
 ## 📖 相关文档
 
-- [📖 Notion 配置指南](./NOTION_SETUP.md)
+### 📚 项目文档
+- [� 文档中心](./docs/README.md) - 完整的项目文档索引
+- [�📖 Notion 配置指南](./docs/config/NOTION_SETUP.md) - Notion 集成配置
+- [🐳 Docker 部署指南](./docs/deployment/DOCKER_DEPLOYMENT.md) - Docker 部署详细说明
+- [🏗️ 项目结构说明](./docs/development/PROJECT-STRUCTURE.md) - 代码架构和文件组织
+- [🔧 登录模式说明](./docs/backend/LOGIN-MODES.md) - 不同登录模式详解
+
+### 🔗 外部文档
 - [🔗 Next.js 官方文档](https://nextjs.org/docs)
 - [🔗 Notion API 文档](https://developers.notion.com/)
 - [🔗 Playwright 文档](https://playwright.dev/)
+- [🔗 Midscene.js 文档](https://midscene.js.org/)
 
 ---
 

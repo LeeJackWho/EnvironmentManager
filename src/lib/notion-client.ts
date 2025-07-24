@@ -3,7 +3,7 @@ import { Client } from '@notionhq/client';
 // 初始化 Notion 客户端
 const notion = new Client({
   auth: process.env.NOTION_API_KEY,
-  timeoutMs: 15000,
+  timeoutMs: 30000, // 增加超时时间到30秒
 });
 
 const databaseId = process.env.NOTION_DATABASE_ID;

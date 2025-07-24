@@ -97,35 +97,38 @@ export const DEFAULT_CONFIG_ITEMS: ConfigItem[] = [
     }
   },
   
-  // Midscene.js 配置
+  // AI 模型配置 (Midscene.js 使用)
   {
-    id: 'MIDSCENE_API_KEY',
-    name: 'Midscene.js API Key',
-    description: '从 https://midscenejs.com 获取的 API 密钥，用于智能验证码识别',
+    id: 'OPENAI_API_KEY',
+    name: 'AI API Key',
+    description: '支持 OpenAI (sk-...)、OpenRouter (sk-or-v1-...)、或其他兼容 OpenAI 格式的 API 服务',
     type: 'password',
     value: '',
     required: false,
     category: 'midscene',
-    placeholder: 'your_midscene_api_key_here',
+    placeholder: 'sk-... 或 sk-or-v1-...',
     sensitive: true,
-    restartRequired: false
+    restartRequired: false,
+    validation: {
+      pattern: '^sk-',
+      message: 'API Key 应以 sk- 开头'
+    }
   },
   {
-    id: 'MIDSCENE_API_BASE',
-    name: 'Midscene.js API 基础 URL',
-    description: 'Midscene.js API 服务的基础 URL，通常使用默认值',
+    id: 'OPENAI_BASE_URL',
+    name: 'API 基础 URL',
+    description: 'API 服务地址。OpenAI 官方留空，OpenRouter: https://openrouter.ai/api/v1，其他服务填写相应地址',
     type: 'text',
-    value: 'https://api.midscenejs.com',
-    defaultValue: 'https://api.midscenejs.com',
+    value: '',
     required: false,
     category: 'midscene',
-    placeholder: 'https://api.midscenejs.com',
+    placeholder: 'https://openrouter.ai/api/v1 (可选)',
     restartRequired: false
   },
   {
     id: 'MIDSCENE_MODEL_NAME',
-    name: 'Midscene.js 模型名称',
-    description: '使用的 Midscene.js 模型名称，如：gpt-4-vision-preview、claude-3-vision、gemini-pro-vision 等',
+    name: '模型名称',
+    description: '使用的 AI 模型名称，支持任何兼容 OpenAI Vision API 的模型',
     type: 'text',
     value: 'gpt-4-vision-preview',
     defaultValue: 'gpt-4-vision-preview',
@@ -136,10 +139,10 @@ export const DEFAULT_CONFIG_ITEMS: ConfigItem[] = [
   },
   {
     id: 'MIDSCENE_ENABLED',
-    name: '启用 Midscene.js',
-    description: '是否启用 Midscene.js 智能验证码识别功能',
+    name: '启用智能验证码识别',
+    description: '是否启用 AI 智能验证码识别功能（需要配置上述 API Key）',
     type: 'boolean',
-    value: false,
+    value: true,
     required: false,
     category: 'midscene',
     restartRequired: false
@@ -147,7 +150,7 @@ export const DEFAULT_CONFIG_ITEMS: ConfigItem[] = [
   {
     id: 'MIDSCENE_CONFIDENCE_THRESHOLD',
     name: '置信度阈值',
-    description: 'Midscene.js 识别结果的最低置信度要求（0.0-1.0）',
+    description: 'AI 识别结果的最低置信度要求（0.0-1.0）',
     type: 'number',
     value: 0.7,
     defaultValue: 0.7,
@@ -162,7 +165,7 @@ export const DEFAULT_CONFIG_ITEMS: ConfigItem[] = [
   {
     id: 'MIDSCENE_TIMEOUT',
     name: '请求超时时间',
-    description: 'Midscene.js API 请求的超时时间（秒）',
+    description: 'AI API 请求的超时时间（秒）',
     type: 'number',
     value: 30,
     defaultValue: 30,

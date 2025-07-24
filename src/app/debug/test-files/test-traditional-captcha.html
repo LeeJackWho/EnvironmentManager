@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>传统模式验证码测试</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status-traditional {
+            background: #6c757d;
+            color: white;
+        }
+        .feature-highlight {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        .feature-highlight h3 {
+            margin-top: 0;
+            font-size: 1.3em;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 5px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        .feature-list li:before {
+            content: "🔧";
+            position: absolute;
+            left: 0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #74b9ff;
+            outline: none;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 10px;
+        }
+        button {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin-right: 10px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 2px solid #ddd;
+        }
+        .success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+        }
+        .warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        .workflow-steps {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .workflow-steps h4 {
+            margin-top: 0;
+            color: #495057;
+        }
+        .workflow-steps ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .workflow-steps li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 传统模式验证码测试 <span class="status-badge status-traditional">TRADITIONAL</span></h1>
+        
+        <div class="feature-highlight">
+            <h3>🆕 传统模式新功能</h3>
+            <ul class="feature-list">
+                <li>智能验证码检测：自动识别页面中的验证码元素</li>
+                <li>用户友好提示：检测到验证码时显示清晰的操作指引</li>
+                <li>等待用户输入：暂停自动流程，等待用户手动输入验证码</li>
+                <li>自动继续登录：用户确认输入后自动点击登录按钮</li>
+                <li>完整流程记录：保存每个步骤的截图和日志</li>
+            </ul>
+        </div>
+
+        <div class="workflow-steps">
+            <h4>📋 传统模式工作流程</h4>
+            <ol>
+                <li><strong>自动填写</strong>：系统自动填写用户名和密码</li>
+                <li><strong>验证码检测</strong>：扫描页面查找验证码元素</li>
+                <li><strong>用户提示</strong>：如果发现验证码，显示输入提示框</li>
+                <li><strong>等待输入</strong>：暂停流程，等待用户手动输入验证码</li>
+                <li><strong>用户确认</strong>：用户点击"我已输入验证码"按钮</li>
+                <li><strong>自动登录</strong>：系统自动点击登录按钮完成登录</li>
+            </ol>
+        </div>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <label for="name">网站名称:</label>
+                <input type="text" id="name" value="传统模式测试网站" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="url">登录页面 URL:</label>
+                <input type="url" id="url" value="https://example.com/traditional-login" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="username">用户名:</label>
+                <input type="text" id="username" value="traditional_user" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">密码:</label>
+                <input type="password" id="password" value="traditional_pass" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="captchaType">验证码类型:</label>
+                <select id="captchaType">
+                    <option value="图形" selected>图形验证码（推荐测试）</option>
+                    <option value="滑动">滑动验证码</option>
+                    <option value="点击">点击验证码</option>
+                    <option value="无">无验证码</option>
+                </select>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="useMidscene">
+                <label for="useMidscene">🧠 启用 Midscene.js 智能模式（取消勾选使用传统模式）</label>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="enableDebug" checked>
+                <label for="enableDebug">🔍 启用详细调试日志</label>
+            </div>
+            
+            <div class="form-group">
+                <label for="notes">测试备注:</label>
+                <textarea id="notes" rows="3" placeholder="传统模式验证码测试...">测试传统模式验证码处理：用户手动输入 + 自动继续登录</textarea>
+            </div>
+            
+            <button type="submit" id="testBtn">🔧 开始传统模式测试</button>
+            <button type="button" id="clearBtn">🗑️ 清空结果</button>
+        </form>
+        
+        <div id="result" class="result info" style="display: none;"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('testForm');
+        const testBtn = document.getElementById('testBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const result = document.getElementById('result');
+
+        // 测试传统模式自动登录
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            testBtn.disabled = true;
+            testBtn.textContent = '🔄 传统模式测试中...';
+            
+            showResult('🔧 开始传统模式验证码测试...\n\n📋 测试流程:\n1. 自动填写用户名密码\n2. 检测验证码\n3. 显示用户输入提示\n4. 等待用户确认\n5. 自动点击登录\n\n', 'info');
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                url: document.getElementById('url').value,
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value,
+                captchaType: document.getElementById('captchaType').value,
+                useMidscene: document.getElementById('useMidscene').checked,
+                notes: document.getElementById('notes').value,
+                traditional: true, // 标记为传统模式测试
+                debug: document.getElementById('enableDebug').checked
+            };
+            
+            try {
+                const startTime = Date.now();
+                
+                const response = await fetch('/api/enhanced-auto-login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                const data = await response.json();
+                
+                // 分析结果类型
+                let resultType = 'info';
+                let statusBadge = '';
+                
+                if (data.success) {
+                    resultType = 'success';
+                    statusBadge = '✅ 传统模式测试成功';
+                } else {
+                    resultType = 'warning';
+                    statusBadge = '⚠️ 部分功能完成';
+                }
+                
+                // 检查验证码处理情况
+                const resultText = JSON.stringify(data, null, 2);
+                const loginResult = data.data?.loginResult;
+                
+                if (loginResult?.captchaDetected && loginResult?.captchaSolved) {
+                    statusBadge += ' (验证码已处理)';
+                } else if (loginResult?.captchaDetected) {
+                    statusBadge += ' (验证码已检测)';
+                }
+                
+                const resultMessage = `${statusBadge}
+执行时间: ${duration}ms
+
+📊 详细结果:
+${JSON.stringify(data, null, 2)}
+
+🔍 功能验证:
+- 传统模式: ${!formData.useMidscene ? '✅ 已启用' : '❌ 未启用（使用智能模式）'}
+- 验证码检测: ${loginResult?.captchaDetected ? '✅ 已检测到' : 'ℹ️ 未检测到'}
+- 验证码处理: ${loginResult?.captchaSolved ? '✅ 用户已输入' : '⚠️ 等待用户输入'}
+- 自动登录: ${loginResult?.loginButtonClicked ? '✅ 已点击' : '⚠️ 未点击'}
+- 调试信息: ${data.data?.sessionDir ? '✅ 已保存' : '❌ 未保存'}
+
+💡 测试说明:
+传统模式会在检测到验证码时暂停流程，显示用户输入提示。
+用户输入验证码并确认后，系统会自动点击登录按钮。
+查看调试目录获取详细的执行步骤和截图记录。`;
+                
+                showResult(resultMessage, resultType);
+                
+            } catch (error) {
+                showResult(`❌ 传统模式测试失败: ${error.message}
+
+🔧 可能原因:
+1. 服务器未启动 (npm run dev)
+2. API 端点不可用
+3. 网络连接问题
+
+💡 解决建议:
+1. 确保开发服务器正在运行
+2. 检查控制台错误信息
+3. 验证 API 路由配置`, 'error');
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = '🔧 开始传统模式测试';
+            }
+        });
+
+        // 清空结果
+        clearBtn.addEventListener('click', () => {
+            result.style.display = 'none';
+            result.textContent = '';
+        });
+
+        function showResult(text, type) {
+            result.textContent = text;
+            result.className = `result ${type}`;
+            result.style.display = 'block';
+            result.scrollTop = result.scrollHeight;
+        }
+
+        // 页面加载时显示说明
+        window.addEventListener('load', () => {
+            showResult(`🔧 传统模式验证码测试工具已就绪
+
+🆕 新功能特性:
+✨ 智能验证码检测 - 自动扫描页面中的验证码元素
+✨ 用户友好提示 - 检测到验证码时显示清晰指引
+✨ 等待用户输入 - 暂停自动流程，等待手动输入
+✨ 自动继续登录 - 用户确认后自动点击登录按钮
+✨ 完整流程记录 - 保存每个步骤的截图和日志
+
+📋 测试步骤:
+1. 确保取消勾选"启用 Midscene.js 智能模式"
+2. 选择"图形验证码"类型
+3. 点击"开始传统模式测试"
+4. 观察是否显示验证码输入提示框
+5. 在提示框中选择相应操作
+
+🎯 预期行为:
+- 系统检测到验证码后会显示提示框
+- 提示用户手动输入验证码
+- 用户确认后自动点击登录按钮
+- 完整记录整个流程
+
+现在开始测试传统模式的验证码处理功能！`, 'info');
+        });
+    </script>
+</body>
+</html>

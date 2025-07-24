@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { chromium } from 'playwright-core';
 import fs from 'fs';
 import path from 'path';
-import { createMidsceneMCPClient, MidsceneMCPClient } from '@/lib/midscene-mcp-client';
+import { createMidsceneDirectClient, MidsceneDirectClient } from '@/lib/midscene-direct';
+import { createCaptchaDebugger, CaptchaDebugger } from '@/lib/captcha-debugger';
 
 /**
  * 增强自动登录 API
@@ -102,7 +103,8 @@ export async function POST(request: NextRequest) {
       username,
       password,
       captchaType,
-      sessionDir
+      sessionDir,
+      useMidscene
     });
 
     // 保存最终截图
@@ -149,7 +151,7 @@ export async function POST(request: NextRequest) {
       try {
         // 注意：这里不调用 context.close()，让浏览器保持运行
         console.log('✅ 浏览器将保持独立运行');
-      } catch (error) {
+      } catch {
         console.log('⚠️ 浏览器状态检查完成');
       }
     }, 2000);
@@ -198,12 +200,14 @@ async function performEnhancedAutoLogin(page: any, config: {
   password: string;
   captchaType: string;
   sessionDir: string;
+  useMidscene: boolean;
 }): Promise<{
   success: boolean;
   usernameFilled: boolean;
   passwordFilled: boolean;
   loginButtonClicked: boolean;
   captchaDetected: boolean;
+  captchaSolved: boolean;
   message: string;
 }> {
   try {
@@ -255,7 +259,7 @@ async function performEnhancedAutoLogin(page: any, config: {
           console.log(`📸 用户名填写截图: ${usernameScreenshot}`);
           break;
         }
-      } catch (error) {
+      } catch {
         console.log(`❌ 用户名选择器失败: ${selector}`);
         continue;
       }
@@ -295,7 +299,7 @@ async function performEnhancedAutoLogin(page: any, config: {
           console.log(`📸 密码填写截图: ${passwordScreenshot}`);
           break;
         }
-      } catch (error) {
+      } catch {
         console.log(`❌ 密码选择器失败: ${selector}`);
         continue;
       }
@@ -305,7 +309,7 @@ async function performEnhancedAutoLogin(page: any, config: {
     let captchaDetected = false;
     let captchaSolved = false;
     if (config.captchaType !== '无') {
-      if (useMidscene) {
+      if (config.useMidscene) {
         console.log(`🤖 使用 Midscene.js 智能检查${config.captchaType}验证码...`);
         const captchaResult = await handleCaptchaWithMidscene(page, config.captchaType, config.sessionDir);
         captchaDetected = captchaResult.detected;
@@ -314,12 +318,19 @@ async function performEnhancedAutoLogin(page: any, config: {
         console.log(`🔧 使用传统方式检查${config.captchaType}验证码...`);
         const captchaResult = await fallbackCaptchaDetection(page, config.captchaType, config.sessionDir);
         captchaDetected = captchaResult.detected;
-        captchaSolved = false; // 传统方式不自动解决
+        captchaSolved = captchaResult.solved; // 传统方式现在支持用户手动输入
       }
     }
 
     // 4. 智能点击登录按钮
     console.log('🔍 智能寻找登录按钮...');
+
+    // 如果检测到验证码但未解决，提示用户
+    if (captchaDetected && !captchaSolved) {
+      console.log('⚠️ 检测到验证码但未解决，跳过自动点击登录按钮');
+      console.log('💡 请手动完成验证码输入后再点击登录按钮');
+    }
+
     const loginButtonSelectors = [
       'button[type="submit"]',
       'input[type="submit"]',
@@ -339,36 +350,42 @@ async function performEnhancedAutoLogin(page: any, config: {
     ];
 
     let loginButtonClicked = false;
-    for (const selector of loginButtonSelectors) {
-      try {
-        console.log(`🔍 尝试登录按钮选择器: ${selector}`);
-        const element = page.locator(selector).first();
-        if (await element.isVisible({ timeout: 2000 })) {
-          console.log(`✅ 找到登录按钮: ${selector}`);
-          
-          // 点击前截图
-          const beforeClickScreenshot = path.join(config.sessionDir, 'before-login-click.png');
-          await page.screenshot({ path: beforeClickScreenshot });
-          console.log(`📸 点击前截图: ${beforeClickScreenshot}`);
-          
-          await element.click();
-          console.log(`✅ 登录按钮点击完成`);
-          loginButtonClicked = true;
-          
-          // 等待页面响应
-          await page.waitForTimeout(3000);
-          
-          // 点击后截图
-          const afterClickScreenshot = path.join(config.sessionDir, 'after-login-click.png');
-          await page.screenshot({ path: afterClickScreenshot });
-          console.log(`📸 点击后截图: ${afterClickScreenshot}`);
-          
-          break;
+
+    // 只有在没有检测到验证码，或者验证码已经解决的情况下才自动点击登录按钮
+    if (!captchaDetected || captchaSolved) {
+      for (const selector of loginButtonSelectors) {
+        try {
+          console.log(`🔍 尝试登录按钮选择器: ${selector}`);
+          const element = page.locator(selector).first();
+          if (await element.isVisible({ timeout: 2000 })) {
+            console.log(`✅ 找到登录按钮: ${selector}`);
+
+            // 点击前截图
+            const beforeClickScreenshot = path.join(config.sessionDir, 'before-login-click.png');
+            await page.screenshot({ path: beforeClickScreenshot });
+            console.log(`📸 点击前截图: ${beforeClickScreenshot}`);
+
+            await element.click();
+            console.log(`✅ 登录按钮点击完成`);
+            loginButtonClicked = true;
+
+            // 等待页面响应
+            await page.waitForTimeout(3000);
+
+            // 点击后截图
+            const afterClickScreenshot = path.join(config.sessionDir, 'after-login-click.png');
+            await page.screenshot({ path: afterClickScreenshot });
+            console.log(`📸 点击后截图: ${afterClickScreenshot}`);
+
+            break;
+          }
+        } catch {
+          console.log(`❌ 登录按钮选择器失败: ${selector}`);
+          continue;
         }
-      } catch (error) {
-        console.log(`❌ 登录按钮选择器失败: ${selector}`);
-        continue;
       }
+    } else {
+      console.log('🔐 验证码未完成，等待用户手动点击登录按钮');
     }
 
     const success = usernameFilled && passwordFilled && loginButtonClicked;
@@ -380,6 +397,7 @@ async function performEnhancedAutoLogin(page: any, config: {
       passwordFilled,
       loginButtonClicked,
       captchaDetected,
+      captchaSolved,
       message
     };
 
@@ -391,143 +409,147 @@ async function performEnhancedAutoLogin(page: any, config: {
       passwordFilled: false,
       loginButtonClicked: false,
       captchaDetected: false,
+      captchaSolved: false,
       message: `增强自动登录失败: ${error}`
     };
   }
 }
 
 /**
- * 使用 Midscene.js 智能处理验证码
+ * 使用 Midscene.js 直接智能处理验证码
  */
 async function handleCaptchaWithMidscene(
   page: any,
   captchaType: string,
   sessionDir: string
 ): Promise<{ detected: boolean; solved: boolean; message: string }> {
-  let midsceneClient: MidsceneMCPClient | null = null;
+  let midsceneClient: MidsceneDirectClient | null = null;
+  let captchaDebugger: CaptchaDebugger | null = null;
 
   try {
-    console.log('🤖 启动 Midscene.js MCP 客户端...');
+    console.log('🤖 启动 Midscene.js 直接客户端...');
 
-    // 检查是否配置了 Midscene API Key
-    if (!process.env.MIDSCENE_API_KEY) {
-      console.log('⚠️ 未配置 MIDSCENE_API_KEY，使用传统验证码检测');
+    // 创建调试器
+    const sessionId = path.basename(sessionDir);
+    captchaDebugger = createCaptchaDebugger(sessionId, sessionDir, captchaType, page.url());
+
+    // 创建并初始化 Midscene 直接客户端
+    midsceneClient = createMidsceneDirectClient();
+
+    // 尝试初始化，如果失败则回退到传统方法
+    const initialized = await midsceneClient.initialize();
+    if (!initialized) {
+      captchaDebugger.recordExecutionStep('Midscene 客户端初始化', false, '初始化失败');
+      console.warn('⚠️ Midscene 客户端初始化失败，使用传统验证码检测');
       return await fallbackCaptchaDetection(page, captchaType, sessionDir);
     }
 
-    // 创建并连接 Midscene MCP 客户端
-    midsceneClient = createMidsceneMCPClient();
-    await midsceneClient.connect();
+    captchaDebugger.recordExecutionStep('Midscene 客户端初始化', true);
 
     // 截图用于分析
     const analysisScreenshot = path.join(sessionDir, 'captcha-analysis.png');
     await page.screenshot({ path: analysisScreenshot, fullPage: true });
     console.log(`📸 验证码分析截图: ${analysisScreenshot}`);
+    captchaDebugger.recordScreenshot('analysis', analysisScreenshot);
 
-    // 使用 Midscene.js 分析验证码
-    console.log('🔍 使用 Midscene.js 分析验证码...');
-    const captchaAnalysis = await midsceneClient.analyzeCaptcha(
-      analysisScreenshot,
-      page.url()
-    );
+    // 使用 Midscene.js 智能识别并解决验证码
+    console.log('🔍 使用 Midscene.js 智能识别验证码...');
+    let captchaResult;
+    try {
+      captchaResult = await midsceneClient.solveCaptchaDirectly(page, page.url());
+      captchaDebugger.recordExecutionStep('智能验证码识别', true);
 
-    console.log('📊 验证码分析结果:', {
-      type: captchaAnalysis.type,
-      confidence: captchaAnalysis.confidence,
-      elementsFound: captchaAnalysis.elements.length
-    });
+      console.log('📊 验证码识别结果:', {
+        detected: captchaResult.detected,
+        solved: captchaResult.solved,
+        type: captchaResult.type,
+        solution: captchaResult.solution,
+        message: captchaResult.message,
+        retryCount: captchaResult.retryCount,
+        executionSteps: captchaResult.executionSteps?.length || 0
+      });
 
-    if (captchaAnalysis.confidence < 0.7) {
-      console.log('⚠️ 验证码识别置信度较低，使用传统方法');
-      return await fallbackCaptchaDetection(page, captchaType, sessionDir);
-    }
-
-    // 如果检测到验证码，尝试智能解决
-    if (captchaAnalysis.elements.length > 0) {
-      console.log('🛡️ 检测到验证码，尝试智能解决...');
-
-      try {
-        const solution = await midsceneClient.solveCaptcha(
-          analysisScreenshot,
-          captchaAnalysis.type,
-          `网站类型: ${captchaType}, 页面URL: ${page.url()}`
-        );
-
-        console.log('🎯 验证码解决方案:', {
-          confidence: solution.confidence,
-          stepsCount: solution.steps.length
+      // 记录执行步骤到调试器
+      if (captchaResult.executionSteps) {
+        captchaResult.executionSteps.forEach(step => {
+          captchaDebugger.recordExecutionStep(step.step, step.success, step.error);
         });
+      }
 
-        // 执行解决方案
-        if (solution.confidence > 0.8 && solution.steps.length > 0) {
-          console.log('🤖 执行智能验证码解决方案...');
+      if (captchaResult.detected && captchaResult.solved) {
+        console.log(`✅ 验证码智能识别并解决成功: ${captchaResult.type} - ${captchaResult.solution || '已解决'}`);
+        captchaDebugger.recordFinalResult(true, true, `智能识别成功: ${captchaResult.type} - ${captchaResult.solution || '已解决'}`);
+        captchaDebugger.generateDebugReport();
 
-          for (const step of solution.steps) {
-            try {
-              await executeAutomationStep(page, step);
-              console.log(`✅ 执行步骤: ${step.description}`);
-            } catch (stepError) {
-              console.log(`⚠️ 步骤执行失败: ${step.description}, 错误: ${stepError}`);
-            }
-          }
+        return {
+          detected: true,
+          solved: true,
+          message: `Midscene.js 智能识别并解决验证码: ${captchaResult.type} - ${captchaResult.solution || '已解决'}`
+        };
+      } else if (captchaResult.detected && !captchaResult.solved) {
+        console.log(`⚠️ 验证码识别成功但解决失败: ${captchaResult.type} - ${captchaResult.solution || '无法解决'}`);
+        captchaDebugger.recordFinalResult(true, false, captchaResult.message);
+        captchaDebugger.generateDebugReport();
 
-          // 验证解决结果
-          await page.waitForTimeout(2000);
-          const verificationScreenshot = path.join(sessionDir, 'captcha-verification.png');
-          await page.screenshot({ path: verificationScreenshot });
-
-          const verificationResult = await midsceneClient.verifyLoginSuccess(
-            verificationScreenshot,
-            ['登录成功', '验证通过', '页面跳转']
-          );
-
-          if (verificationResult.isSuccess) {
-            console.log('🎉 验证码智能解决成功！');
-            return {
-              detected: true,
-              solved: true,
-              message: '验证码已通过 Midscene.js 智能解决'
-            };
-          } else {
-            console.log('⚠️ 验证码解决后验证失败，可能需要手动处理');
-            return {
-              detected: true,
-              solved: false,
-              message: '验证码已识别但自动解决失败，请手动处理'
-            };
-          }
-        } else {
-          console.log('⚠️ 验证码解决方案置信度不足，建议手动处理');
-          return {
-            detected: true,
-            solved: false,
-            message: '验证码已识别但置信度不足，建议手动处理'
-          };
-        }
-      } catch (solveError) {
-        console.log('❌ 验证码智能解决失败:', solveError);
         return {
           detected: true,
           solved: false,
-          message: '验证码已识别但智能解决失败，请手动处理'
+          message: captchaResult.message
+        };
+      } else {
+        console.log('ℹ️ 未检测到验证码');
+        captchaDebugger.recordFinalResult(false, false, captchaResult.message);
+        captchaDebugger.generateDebugReport();
+
+        return {
+          detected: false,
+          solved: false,
+          message: captchaResult.message
         };
       }
-    } else {
-      console.log('✅ 未检测到验证码');
-      return { detected: false, solved: false, message: '未检测到验证码' };
+
+    } catch (analysisError) {
+      captchaDebugger.recordExecutionStep('智能验证码识别', false, String(analysisError));
+      console.warn('⚠️ Midscene 智能验证码识别失败，使用传统方法:', analysisError);
+
+      // 生成调试报告
+      if (captchaDebugger) {
+        captchaDebugger.recordFinalResult(false, false, '智能识别失败，回退到传统方法');
+        captchaDebugger.generateDebugReport();
+      }
+
+      return await fallbackCaptchaDetection(page, captchaType, sessionDir);
     }
 
   } catch (error) {
     console.log('❌ Midscene.js 验证码处理失败:', error);
+
+    // 记录错误
+    if (captchaDebugger) {
+      captchaDebugger.recordExecutionStep('Midscene 验证码处理', false, String(error));
+      captchaDebugger.recordFinalResult(false, false, `处理失败: ${error}`);
+      captchaDebugger.generateDebugReport();
+    }
+
     // 回退到传统方法
     return await fallbackCaptchaDetection(page, captchaType, sessionDir);
   } finally {
-    // 断开 MCP 连接
+    // 断开 Midscene 连接
     if (midsceneClient) {
       try {
         await midsceneClient.disconnect();
       } catch (disconnectError) {
-        console.log('⚠️ MCP 客户端断开连接失败:', disconnectError);
+        console.log('⚠️ Midscene 客户端断开连接失败:', disconnectError);
+      }
+    }
+
+    // 生成最终调试报告
+    if (captchaDebugger) {
+      try {
+        const reportPath = captchaDebugger.generateDebugReport();
+        console.log(`📋 验证码调试报告已生成: ${reportPath}`);
+      } catch (reportError) {
+        console.warn('⚠️ 生成调试报告失败:', reportError);
       }
     }
   }
@@ -566,6 +588,7 @@ async function executeAutomationStep(page: any, step: any): Promise<void> {
 
 /**
  * 传统验证码检测方法（回退方案）
+ * 检测到验证码后提示用户手动输入，然后等待用户完成
  */
 async function fallbackCaptchaDetection(
   page: any,
@@ -615,13 +638,23 @@ async function fallbackCaptchaDetection(
           await page.screenshot({ path: captchaScreenshot });
           console.log(`📸 验证码截图: ${captchaScreenshot}`);
 
+          // 如果是图形验证码，提示用户手动输入并等待
+          if (captchaType === '图形') {
+            const userInputResult = await waitForUserCaptchaInput(page, sessionDir);
+            return {
+              detected: true,
+              solved: userInputResult.solved,
+              message: userInputResult.message
+            };
+          }
+
           return {
             detected: true,
             solved: false,
             message: `检测到${captchaType}验证码，请手动处理`
           };
         }
-      } catch (error) {
+      } catch {
         continue;
       }
     }
@@ -630,5 +663,172 @@ async function fallbackCaptchaDetection(
   } catch (error) {
     console.log(`❌ 传统验证码检测失败: ${error}`);
     return { detected: false, solved: false, message: '验证码检测失败' };
+  }
+}
+
+/**
+ * 等待用户手动输入验证码
+ */
+async function waitForUserCaptchaInput(
+  page: any,
+  sessionDir: string
+): Promise<{ solved: boolean; message: string }> {
+  try {
+    console.log('⏳ 等待用户手动输入验证码...');
+
+    // 在页面中注入提示脚本
+    await page.addInitScript(() => {
+      // 创建提示框
+      const createCaptchaPrompt = () => {
+        // 检查是否已经存在提示框
+        if (document.getElementById('captcha-prompt-overlay')) {
+          return;
+        }
+
+        const overlay = document.createElement('div');
+        overlay.id = 'captcha-prompt-overlay';
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.8);
+          z-index: 999999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: Arial, sans-serif;
+        `;
+
+        const promptBox = document.createElement('div');
+        promptBox.style.cssText = `
+          background: white;
+          padding: 30px;
+          border-radius: 10px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+          max-width: 500px;
+          text-align: center;
+        `;
+
+        promptBox.innerHTML = `
+          <h2 style="color: #333; margin-bottom: 20px;">🔐 验证码输入提示</h2>
+          <p style="color: #666; margin-bottom: 20px; line-height: 1.5;">
+            检测到验证码，请手动输入验证码内容，然后点击下方按钮继续自动登录流程。
+          </p>
+          <div style="margin-bottom: 20px;">
+            <strong style="color: #e74c3c;">请在页面中找到验证码输入框并输入验证码</strong>
+          </div>
+          <button id="captcha-continue-btn" style="
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+          ">✅ 我已输入验证码，继续登录</button>
+          <button id="captcha-skip-btn" style="
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+          ">⏭️ 跳过验证码</button>
+        `;
+
+        overlay.appendChild(promptBox);
+        document.body.appendChild(overlay);
+
+        // 添加按钮事件
+        const continueBtn = document.getElementById('captcha-continue-btn');
+        const skipBtn = document.getElementById('captcha-skip-btn');
+
+        if (continueBtn) {
+          continueBtn.onclick = () => {
+            (window as any).captchaUserAction = 'continue';
+            overlay.remove();
+          };
+        }
+
+        if (skipBtn) {
+          skipBtn.onclick = () => {
+            (window as any).captchaUserAction = 'skip';
+            overlay.remove();
+          };
+        }
+      };
+
+      // 页面加载完成后显示提示
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', createCaptchaPrompt);
+      } else {
+        createCaptchaPrompt();
+      }
+    });
+
+    // 等待页面加载并显示提示
+    await page.waitForTimeout(2000);
+
+    // 执行提示脚本
+    await page.evaluate(() => {
+      if (typeof (window as any).createCaptchaPrompt === 'function') {
+        (window as any).createCaptchaPrompt();
+      }
+    });
+
+    console.log('💬 验证码输入提示已显示，等待用户操作...');
+
+    // 等待用户操作（最多等待5分钟）
+    const maxWaitTime = 5 * 60 * 1000; // 5分钟
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxWaitTime) {
+      try {
+        const userAction = await page.evaluate(() => (window as any).captchaUserAction);
+
+        if (userAction === 'continue') {
+          console.log('✅ 用户确认已输入验证码，继续登录流程');
+
+          // 截图记录用户输入后的状态
+          const afterInputScreenshot = path.join(sessionDir, 'after-user-captcha-input.png');
+          await page.screenshot({ path: afterInputScreenshot });
+          console.log(`📸 用户输入后截图: ${afterInputScreenshot}`);
+
+          return {
+            solved: true,
+            message: '用户已手动输入验证码，继续自动登录'
+          };
+        } else if (userAction === 'skip') {
+          console.log('⏭️ 用户选择跳过验证码');
+          return {
+            solved: false,
+            message: '用户选择跳过验证码输入'
+          };
+        }
+
+        // 每秒检查一次
+        await page.waitForTimeout(1000);
+      } catch {
+        // 继续等待
+        await page.waitForTimeout(1000);
+      }
+    }
+
+    console.log('⏰ 等待用户输入验证码超时');
+    return {
+      solved: false,
+      message: '等待用户输入验证码超时（5分钟）'
+    };
+
+  } catch (error) {
+    console.error('❌ 等待用户输入验证码失败:', error);
+    return {
+      solved: false,
+      message: `等待用户输入失败: ${error}`
+    };
   }
 }

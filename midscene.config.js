@@ -1,103 +1,95 @@
 /**
  * Midscene.js 配置文件
- * 用于智能验证码识别和页面元素分析
+ * 参考 playwright-mind 项目的配置方式
  */
 
-module.exports = {
-  // 基础配置
-  apiKey: process.env.MIDSCENE_API_KEY,
-  
-  // MCP 服务器配置
-  mcpServer: {
-    port: 3001,
-    host: 'localhost',
-    timeout: 60000,
-  },
+import { defineConfig } from '@midscene/web';
+import dotenv from 'dotenv';
 
+// 加载环境变量
+dotenv.config({ path: '.env.local' });
+
+export default defineConfig({
+  // AI 模型配置
+  ai: {
+    // 使用 OpenRouter 或其他兼容 OpenAI 的服务
+    provider: 'openai',
+    apiKey: process.env.OPENAI_API_KEY,
+    baseURL: process.env.OPENAI_BASE_URL || 'https://openrouter.ai/api/v1',
+    model: process.env.MIDSCENE_MODEL_NAME || 'qwen/qwen2.5-vl-72b-instruct:free',
+    
+    // 请求配置
+    timeout: 60000,
+    maxRetries: 3,
+    
+    // 额外的请求头（用于 OpenRouter）
+    defaultHeaders: {
+      'HTTP-Referer': 'https://environment-manager.local',
+      'X-Title': 'Environment Manager - Captcha Recognition'
+    }
+  },
+  
   // 验证码识别配置
   captcha: {
     // 支持的验证码类型
     supportedTypes: [
       'text',      // 文字验证码
-      'image',     // 图片验证码
-      'slider',    // 滑动验证码
       'click',     // 点击验证码
-      'puzzle',    // 拼图验证码
+      'grid',      // 网格验证码
+      'slider',    // 滑块验证码
+      'rotate',    // 旋转验证码
+      'logic',     // 逻辑验证码
+      'drag',      // 拖拽验证码
+      'sequence'   // 序列点击
     ],
     
     // 识别置信度阈值
     confidenceThreshold: 0.7,
     
-    // 解决置信度阈值
-    solveThreshold: 0.8,
-    
     // 超时设置
     timeout: {
-      analysis: 30000,    // 分析超时
-      solve: 60000,       // 解决超时
-      verify: 30000,      // 验证超时
+      recognition: 30000,  // 识别超时
+      solving: 60000,      // 解决超时
+      verification: 30000  // 验证超时
     },
     
     // 重试配置
     retry: {
       maxAttempts: 3,
-      delay: 2000,
+      delay: 2000
     }
   },
-
-  // 页面分析配置
-  pageAnalysis: {
-    // 目标元素类型
-    targetElements: [
-      'username',
-      'password', 
-      'submit_button',
-      'captcha',
-      'error_message',
-      'success_indicator'
-    ],
+  
+  // 浏览器配置
+  browser: {
+    headless: false,
+    viewport: { width: 1280, height: 720 },
+    timeout: 30000,
     
-    // 分析模式
-    analysisMode: 'comprehensive', // 'fast' | 'comprehensive'
-    
-    // 截图配置
-    screenshot: {
-      fullPage: true,
-      quality: 90,
-      format: 'png'
+    // Playwright 启动参数
+    launchOptions: {
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-web-security'
+      ]
     }
   },
-
-  // 自动化配置
-  automation: {
-    // 操作延迟
-    actionDelay: 1000,
-    
-    // 等待超时
-    waitTimeout: 10000,
-    
-    // 支持的操作类型
-    supportedActions: [
-      'input',
-      'click', 
-      'drag',
-      'wait',
-      'scroll'
-    ]
+  
+  // 调试配置
+  debug: {
+    enabled: process.env.NODE_ENV === 'development',
+    screenshotOnError: true,
+    saveScreenshots: true,
+    screenshotDir: '.browser-sessions/screenshots',
+    logLevel: 'info'
   },
-
-  // 日志配置
-  logging: {
-    level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
-    enableConsole: true,
-    enableFile: true,
-    logDir: './.browser-sessions/logs'
-  },
-
-  // 缓存配置
-  cache: {
-    enabled: true,
-    ttl: 3600000, // 1小时
-    maxSize: 100
+  
+  // 输出配置
+  output: {
+    reportDir: '.browser-sessions/reports',
+    saveExecutionLogs: true,
+    saveNetworkLogs: false
   }
-};
+});
