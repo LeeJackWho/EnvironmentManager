@@ -86,7 +86,7 @@ OLLAMA_BASE_URL=http://localhost:11434
 
 ### 当前激活配置
 - **模型提供商**：Google Gemini
-- **API Key**：已配置 (AIzaSy...)
+- **API Key**：已配置 (已脱敏，见 .env.local)
 - **状态**：✅ 可用
 
 ### 配置文件位置
