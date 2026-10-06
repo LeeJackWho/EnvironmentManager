@@ -28,7 +28,7 @@ OPENAI_API_KEY=sk-your-openai-api-key-here
 
 ```bash
 # 在 .env.local 中配置
-GOOGLE_API_KEY=AIzaSyCZIZQJOo1TyuYPqug2C9WXfH3cj754z8I
+GOOGLE_API_KEY=<YOUR_GOOGLE_API_KEY>
 ```
 
 **获取方式**：
